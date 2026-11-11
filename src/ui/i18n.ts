@@ -1,0 +1,235 @@
+import { ErrorCode, LastAction, Street } from '@/engine/types';
+
+import { getLang } from './lang';
+
+const fa = {
+  appTitle: 'چیپ پوکر',
+  appTagline: 'با کارت واقعی بازی کنید؛ حساب چیپ‌ها با اپ.',
+  otherLanguage: 'English',
+  yourName: 'اسم شما',
+  namePlaceholder: 'مثلاً علی',
+  needName: 'اول اسم خودتان را وارد کنید.',
+  joinTable: 'ورود به میز',
+  tableCode: 'کد میز',
+  join: 'ورود',
+  needCode: 'کد میز را وارد کنید.',
+  tableNotFound: 'میزی با این کد پیدا نشد.',
+  newTable: 'ساخت میز جدید',
+  smallBlind: 'بلایند کوچک',
+  bigBlind: 'بلایند بزرگ',
+  buyInEach: 'مبلغ ورود هر نفر',
+  createTable: 'ساخت میز',
+  createFailed: 'ساخت میز انجام نشد. دوباره تلاش کنید.',
+  badSettings: 'بلایندها و مبلغ ورود باید عدد مثبت باشند و بلایند کوچک ≤ بلایند بزرگ ≤ مبلغ ورود.',
+  onlinePoker: 'پوکر آنلاین (به‌زودی)',
+  onlinePokerHint: 'بازی کامل چندنفره با کارت‌های داخل اپ.',
+  offlineNotice: 'حالت آزمایشی: سرور تنظیم نشده و میزها فقط روی همین دستگاه ذخیره می‌شوند.',
+
+  leave: 'خروج',
+  ledger: 'دفتر حساب',
+  back: 'بازگشت',
+  serverError: 'ارتباط با سرور برقرار نشد.',
+  shareMessage: 'کد میز پوکر: {code}',
+  shareHint: 'این کد را به دوستانتان بدهید',
+  lobbyInfo: 'بلایندها {sb} / {bb} · ورود {buyIn}',
+  handOver: 'پایان دست {n}',
+  wins: '{name} {amount} برد',
+  handTitle: 'دست {n} · {street}',
+  showdown: 'نمایش کارت‌ها',
+  pot: 'پات',
+  you: ' (شما)',
+  sittingOut: 'بیرون',
+  noChips: 'بدون چیپ',
+  actingFor: 'اقدام به جای {name}',
+  turnOf: 'نوبت {name} است…',
+  showCards: 'کارت‌ها را نشان دهید؛ میزبان برنده را ثبت می‌کند.',
+  startGame: 'شروع بازی',
+  nextHand: 'دست بعدی',
+  waitingHost: 'منتظر میزبان برای شروع دست…',
+  undo: 'برگرداندن آخرین حرکت',
+
+  bet: 'بت',
+  raise: 'ریز',
+  raiseTo: 'ریز تا',
+  check: 'چک',
+  call: 'کال',
+  fold: 'فولد',
+  allIn: 'آل‌این',
+  cancel: 'انصراف',
+  min: 'حداقل',
+  halfPot: 'نصف پات',
+  range: 'از {min} تا {max}',
+
+  pickWinner: 'برندهٔ {pot} ({amount}) را انتخاب کنید',
+  mainPot: 'پات اصلی',
+  sidePot: 'پات کناری {n}',
+  confirmWinner: 'تأیید برنده',
+  splitPot: 'تقسیم پات',
+
+  close: 'بستن',
+  player: 'بازیکن',
+  buyIn: 'ورود',
+  stack: 'موجودی',
+  result: 'نتیجه',
+  gone: ' (رفته)',
+  out: ' (بیرون)',
+  settlement: 'تسویه',
+  midHand: 'دست در جریان است؛ تسویهٔ نهایی بعد از پایان دست دقیق می‌شود.',
+  allSquare: 'کسی به کسی بدهکار نیست.',
+  hostTools: 'ابزار میزبان',
+  rebuyAmount: 'مبلغ خرید مجدد',
+  bringBack: 'برگرداندن',
+  sitOut: 'بیرون',
+  addChips: '+ چیپ',
+  guestPlayer: 'بازیکن بدون گوشی',
+  name: 'اسم',
+  add: 'افزودن',
+
+  conflict: 'هم‌زمان چند تغییر ثبت شد؛ دوباره تلاش کنید.',
+  network: 'ارتباط با سرور برقرار نشد. دوباره تلاش کنید.',
+};
+
+type Key = keyof typeof fa;
+
+const en: Record<Key, string> = {
+  appTitle: 'Poker Chips',
+  appTagline: 'Play with real cards; the app keeps the chips.',
+  otherLanguage: 'فارسی',
+  yourName: 'Your name',
+  namePlaceholder: 'e.g. Alex',
+  needName: 'Enter your name first.',
+  joinTable: 'Join a table',
+  tableCode: 'Table code',
+  join: 'Join',
+  needCode: 'Enter the table code.',
+  tableNotFound: 'No table found with this code.',
+  newTable: 'New table',
+  smallBlind: 'Small blind',
+  bigBlind: 'Big blind',
+  buyInEach: 'Buy-in per player',
+  createTable: 'Create table',
+  createFailed: 'Could not create the table. Try again.',
+  badSettings: 'Blinds and buy-in must be positive numbers, with small blind ≤ big blind ≤ buy-in.',
+  onlinePoker: 'Online poker (coming soon)',
+  onlinePokerHint: 'Full multiplayer game with cards dealt in the app.',
+  offlineNotice: 'Trial mode: no server is set up, so tables are saved on this device only.',
+
+  leave: 'Leave',
+  ledger: 'Ledger',
+  back: 'Back',
+  serverError: 'Could not reach the server.',
+  shareMessage: 'Poker table code: {code}',
+  shareHint: 'Share this code with your friends',
+  lobbyInfo: 'Blinds {sb} / {bb} · Buy-in {buyIn}',
+  handOver: 'Hand {n} finished',
+  wins: '{name} wins {amount}',
+  handTitle: 'Hand {n} · {street}',
+  showdown: 'Showdown',
+  pot: 'Pot',
+  you: ' (you)',
+  sittingOut: 'Sitting out',
+  noChips: 'No chips',
+  actingFor: 'Act for {name}',
+  turnOf: "{name}'s turn…",
+  showCards: 'Show your cards; the host records the winner.',
+  startGame: 'Start game',
+  nextHand: 'Next hand',
+  waitingHost: 'Waiting for the host to start the hand…',
+  undo: 'Undo last action',
+
+  bet: 'Bet',
+  raise: 'Raise',
+  raiseTo: 'Raise to',
+  check: 'Check',
+  call: 'Call',
+  fold: 'Fold',
+  allIn: 'All-in',
+  cancel: 'Cancel',
+  min: 'Min',
+  halfPot: '½ pot',
+  range: '{min} to {max}',
+
+  pickWinner: 'Pick the winner of the {pot} ({amount})',
+  mainPot: 'main pot',
+  sidePot: 'side pot {n}',
+  confirmWinner: 'Confirm winner',
+  splitPot: 'Split pot',
+
+  close: 'Close',
+  player: 'Player',
+  buyIn: 'Buy-in',
+  stack: 'Stack',
+  result: 'Result',
+  gone: ' (left)',
+  out: ' (out)',
+  settlement: 'Settle up',
+  midHand: 'A hand is in progress; the final settlement is exact once it ends.',
+  allSquare: 'Nobody owes anything.',
+  hostTools: 'Host tools',
+  rebuyAmount: 'Rebuy amount',
+  bringBack: 'Bring back',
+  sitOut: 'Sit out',
+  addChips: '+ Chips',
+  guestPlayer: 'Player without a phone',
+  name: 'Name',
+  add: 'Add',
+
+  conflict: 'Several changes happened at once; try again.',
+  network: 'Could not reach the server. Try again.',
+};
+
+/** Translate `key`, filling `{placeholders}` from `params`. */
+export function t(key: Key, params?: Record<string, string | number>): string {
+  let text = (getLang() === 'en' ? en : fa)[key];
+  if (params) for (const [k, v] of Object.entries(params)) text = text.replace(`{${k}}`, String(v));
+  return text;
+}
+
+const streets: Record<Street, [string, string]> = {
+  preflop: ['پیش از فلاپ', 'Pre-flop'],
+  flop: ['فلاپ', 'Flop'],
+  turn: ['ترن', 'Turn'],
+  river: ['ریور', 'River'],
+};
+export const streetName = (s: Street) => streets[s][getLang() === 'en' ? 1 : 0];
+
+const actionKeys: Record<LastAction, Key> = {
+  fold: 'fold',
+  check: 'check',
+  call: 'call',
+  bet: 'bet',
+  raise: 'raise',
+  allIn: 'allIn',
+  sb: 'smallBlind',
+  bb: 'bigBlind',
+};
+export const actionName = (a: LastAction) => t(actionKeys[a]);
+
+const errors: Record<ErrorCode, [string, string]> = {
+  notHost: ['فقط میزبان می‌تواند این کار را انجام دهد.', 'Only the host can do this.'],
+  notAllowed: ['اجازهٔ این کار را ندارید.', 'You are not allowed to do this.'],
+  notYourTurn: ['نوبت شما نیست.', 'It is not your turn.'],
+  wrongPhase: ['الان نمی‌شود این کار را انجام داد.', 'This cannot be done right now.'],
+  tableFull: ['میز پر است.', 'The table is full.'],
+  needTwoPlayers: [
+    'برای شروع دست حداقل دو بازیکن با موجودی لازم است.',
+    'At least two players with chips are needed to start a hand.',
+  ],
+  cannotCheck: ['نمی‌توانید چک کنید؛ باید کال یا فولد کنید.', 'You cannot check; call or fold.'],
+  nothingToCall: ['چیزی برای کال کردن نیست.', 'There is nothing to call.'],
+  raiseTooSmall: ['مبلغ ریز کمتر از حداقل مجاز است.', 'The raise is below the minimum.'],
+  notEnoughChips: ['موجودی کافی نیست.', 'Not enough chips.'],
+  badAmount: ['مبلغ نامعتبر است.', 'Invalid amount.'],
+  badWinners: ['برنده‌ها را درست انتخاب کنید.', 'Pick valid winners.'],
+  nothingToUndo: ['چیزی برای برگرداندن نیست.', 'Nothing to undo.'],
+  unknownPlayer: ['بازیکن پیدا نشد.', 'Player not found.'],
+};
+
+export function describeError(e: unknown): string {
+  const code = (e as { code?: string })?.code;
+  if (code && code in errors) return errors[code as ErrorCode][getLang() === 'en' ? 1 : 0];
+  const message = (e as Error)?.message;
+  if (message === 'conflict') return t('conflict');
+  if (message === 'notFound') return t('tableNotFound');
+  return t('network');
+}

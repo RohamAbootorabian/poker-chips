@@ -4,6 +4,7 @@ import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { legalActions, potTotal } from '@/engine/engine';
 import { Action, TableState } from '@/engine/types';
 
+import { t } from './i18n';
 import { Button, Row, T } from './kit';
 import { colors, fmt, parseAmount, radius } from './theme';
 
@@ -30,22 +31,23 @@ export function ActionBar(props: { state: TableState; playerId: string; run: (a:
   if (raising) {
     const pot = potTotal(state) + legal.toCall;
     const presets: [string, number][] = [
-      ['حداقل', minRaiseTo],
-      ['نصف پات', clamp(state.currentBet + pot / 2)],
-      ['پات', clamp(state.currentBet + pot)],
-      ['آل‌این', maxRaiseTo],
+      [t('min'), minRaiseTo],
+      [t('halfPot'), clamp(state.currentBet + pot / 2)],
+      [t('pot'), clamp(state.currentBet + pot)],
+      [t('allIn'), maxRaiseTo],
     ];
     const step = state.settings.bigBlind;
     const valid = to >= minRaiseTo && to <= maxRaiseTo;
-    const verb = state.currentBet === 0 ? 'بت' : 'ریز تا';
+    const verb = state.currentBet === 0 ? t('bet') : t('raiseTo');
     return (
       <View style={{ gap: 10 }}>
-        <Row>
+        {/* Minus on the left, plus on the right in both languages. */}
+        <Row style={{ flexDirection: 'row-reverse' }}>
           <Stepper label="+" onPress={() => setTo(clamp(to + step))} />
           <TextInput
             value={to ? fmt(to) : ''}
-            onChangeText={(t) => {
-              const n = parseAmount(t);
+            onChangeText={(text) => {
+              const n = parseAmount(text);
               setTo(Number.isNaN(n) ? 0 : n);
             }}
             keyboardType="number-pad"
@@ -67,13 +69,13 @@ export function ActionBar(props: { state: TableState; playerId: string; run: (a:
         </Row>
         <Row>
           <Button
-            label={to === maxRaiseTo ? 'آل‌این' : verb}
-            sub={valid ? fmt(to) : `از ${fmt(minRaiseTo)} تا ${fmt(maxRaiseTo)}`}
+            label={to === maxRaiseTo ? t('allIn') : verb}
+            sub={valid ? fmt(to) : t('range', { min: fmt(minRaiseTo), max: fmt(maxRaiseTo) })}
             disabled={!valid}
             onPress={() => run({ type: 'raise', playerId, to })}
             style={{ flex: 2 }}
           />
-          <Button label="انصراف" variant="ghost" onPress={() => setRaising(false)} style={{ flex: 1 }} />
+          <Button label={t('cancel')} variant="ghost" onPress={() => setRaising(false)} style={{ flex: 1 }} />
         </Row>
       </View>
     );
@@ -82,20 +84,20 @@ export function ActionBar(props: { state: TableState; playerId: string; run: (a:
   return (
     <Row>
       {legal.canRaise ? (
-        <Button label={state.currentBet === 0 ? 'بت' : 'ریز'} onPress={openRaise} style={{ flex: 1 }} />
+        <Button label={state.currentBet === 0 ? t('bet') : t('raise')} onPress={openRaise} style={{ flex: 1 }} />
       ) : null}
       {legal.canCheck ? (
-        <Button label="چک" variant="secondary" onPress={() => run({ type: 'check', playerId })} style={{ flex: 1 }} />
+        <Button label={t('check')} variant="secondary" onPress={() => run({ type: 'check', playerId })} style={{ flex: 1 }} />
       ) : (
         <Button
-          label={legal.canRaise ? 'کال' : 'آل‌این'}
+          label={legal.canRaise ? t('call') : t('allIn')}
           sub={fmt(legal.toCall)}
           variant="secondary"
           onPress={() => run({ type: 'call', playerId })}
           style={{ flex: 1 }}
         />
       )}
-      <Button label="فولد" variant="danger" onPress={() => run({ type: 'fold', playerId })} style={{ flex: 1 }} />
+      <Button label={t('fold')} variant="danger" onPress={() => run({ type: 'fold', playerId })} style={{ flex: 1 }} />
     </Row>
   );
 }

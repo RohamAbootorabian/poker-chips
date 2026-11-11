@@ -11,11 +11,13 @@ import {
   ViewStyle,
 } from 'react-native';
 
+import { isRTL, rowDir, startAlign } from './lang';
 import { colors, radius } from './theme';
 
-/** Right-to-left text in the app's default colour. */
+/** Text in the app's default colour, aligned for the current language. */
 export function T({ style, ...rest }: TextProps) {
-  return <Text {...rest} style={[styles.text, style]} />;
+  const dir = { writingDirection: isRTL() ? 'rtl' : 'ltr', textAlign: startAlign() } as const;
+  return <Text {...rest} style={[styles.text, dir, style]} />;
 }
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -58,7 +60,7 @@ export function Field({ label, style, ...rest }: TextInputProps & { label: strin
         placeholderTextColor={colors.muted}
         selectionColor={colors.gold}
         {...rest}
-        style={[styles.input, style]}
+        style={[styles.input, { textAlign: startAlign() }, style]}
       />
     </View>
   );
@@ -68,9 +70,9 @@ export function Card({ children, style }: { children: ReactNode; style?: StylePr
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
-/** A horizontal row laid out right-to-left. */
+/** A horizontal row that follows the reading direction of the current language. */
 export function Row({ children, style }: { children: ReactNode; style?: StyleProp<ViewStyle> }) {
-  return <View style={[styles.row, style]}>{children}</View>;
+  return <View style={[styles.row, { flexDirection: rowDir() }, style]}>{children}</View>;
 }
 
 export function Notice({ text }: { text: string | null }) {
@@ -83,7 +85,7 @@ export function Notice({ text }: { text: string | null }) {
 }
 
 const styles = StyleSheet.create({
-  text: { color: colors.text, fontSize: 16, writingDirection: 'rtl', textAlign: 'right' },
+  text: { color: colors.text, fontSize: 16 },
   button: {
     minHeight: 52,
     paddingHorizontal: 16,
@@ -104,7 +106,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontSize: 18,
     paddingHorizontal: 14,
-    textAlign: 'right',
   },
   card: {
     backgroundColor: colors.felt,
@@ -114,7 +115,7 @@ const styles = StyleSheet.create({
     padding: 14,
     gap: 10,
   },
-  row: { flexDirection: 'row-reverse', alignItems: 'center', gap: 10 },
+  row: { alignItems: 'center', gap: 10 },
   notice: {
     borderRadius: radius,
     borderWidth: 1,

@@ -5,7 +5,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { settle } from '@/engine/engine';
 import { Action, TableState } from '@/engine/types';
 
+import { t } from './i18n';
 import { Button, Card, Field, Row, T } from './kit';
+import { isRTL } from './lang';
 import { colors, fmt, fmtSigned, parseAmount } from './theme';
 
 /** Buy-ins, current stacks, results and who owes whom. Host can add chips here. */
@@ -36,16 +38,16 @@ export function Ledger(props: {
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
           <Row style={{ justifyContent: 'space-between' }}>
-            <T style={styles.title}>دفتر حساب</T>
-            <Button label="بستن" variant="ghost" onPress={props.onClose} style={{ minHeight: 40 }} />
+            <T style={styles.title}>{t('ledger')}</T>
+            <Button label={t('close')} variant="ghost" onPress={props.onClose} style={{ minHeight: 40 }} />
           </Row>
 
           <Card>
             <Row>
-              <T style={[styles.head, { flex: 2 }]}>بازیکن</T>
-              <T style={styles.head}>ورود</T>
-              <T style={styles.head}>موجودی</T>
-              <T style={styles.head}>نتیجه</T>
+              <T style={[styles.head, { flex: 2 }]}>{t('player')}</T>
+              <T style={styles.head}>{t('buyIn')}</T>
+              <T style={styles.head}>{t('stack')}</T>
+              <T style={styles.head}>{t('result')}</T>
             </Row>
             {state.players.map((p) => {
               const net = p.stack + p.committed - p.buyIn;
@@ -53,7 +55,7 @@ export function Ledger(props: {
                 <Row key={p.id}>
                   <T style={{ flex: 2 }} numberOfLines={1}>
                     {p.name}
-                    {p.left ? ' (رفته)' : p.sittingOut ? ' (بیرون)' : ''}
+                    {p.left ? t('gone') : p.sittingOut ? t('out') : ''}
                   </T>
                   <T style={styles.cell}>{fmt(p.buyIn)}</T>
                   <T style={styles.cell}>{fmt(p.stack)}</T>
@@ -66,22 +68,23 @@ export function Ledger(props: {
           </Card>
 
           <Card>
-            <T style={styles.section}>تسویه</T>
-            {midHand ? <T style={styles.muted}>دست در جریان است؛ تسویهٔ نهایی بعد از پایان دست دقیق می‌شود.</T> : null}
-            {!midHand && transfers.length === 0 ? <T style={styles.muted}>کسی به کسی بدهکار نیست.</T> : null}
+            <T style={styles.section}>{t('settlement')}</T>
+            {midHand ? <T style={styles.muted}>{t('midHand')}</T> : null}
+            {!midHand && transfers.length === 0 ? <T style={styles.muted}>{t('allSquare')}</T> : null}
             {!midHand &&
-              transfers.map((t, i) => (
+              transfers.map((tr, i) => (
                 <T key={i}>
-                  {name(t.from)} ← {name(t.to)}: <T style={{ color: colors.gold, fontWeight: '700' }}>{fmt(t.amount)}</T>
+                  {name(tr.from)} {isRTL() ? '←' : '→'} {name(tr.to)}:{' '}
+                  <T style={{ color: colors.gold, fontWeight: '700' }}>{fmt(tr.amount)}</T>
                 </T>
               ))}
           </Card>
 
           {isHost ? (
             <Card>
-              <T style={styles.section}>ابزار میزبان</T>
+              <T style={styles.section}>{t('hostTools')}</T>
               <Field
-                label="مبلغ خرید مجدد"
+                label={t('rebuyAmount')}
                 value={amount}
                 onChangeText={setAmount}
                 keyboardType="number-pad"
@@ -93,13 +96,13 @@ export function Ledger(props: {
                     {p.name}
                   </T>
                   <Button
-                    label={p.sittingOut ? 'برگرداندن' : 'بیرون'}
+                    label={p.sittingOut ? t('bringBack') : t('sitOut')}
                     variant="ghost"
                     onPress={() => run({ type: 'sitOut', playerId: p.id, value: !p.sittingOut })}
                     style={styles.small}
                   />
                   <Button
-                    label="+ چیپ"
+                    label={t('addChips')}
                     variant="secondary"
                     disabled={!(rebuyAmount > 0)}
                     onPress={() => run({ type: 'rebuy', playerId: p.id, amount: rebuyAmount })}
@@ -109,8 +112,8 @@ export function Ledger(props: {
               ))}
               <View style={styles.divider} />
               <Row style={{ alignItems: 'flex-end' }}>
-                <Field label="بازیکن بدون گوشی" value={guest} onChangeText={setGuest} placeholder="اسم" maxLength={20} />
-                <Button label="افزودن" variant="secondary" onPress={addGuest} disabled={!guest.trim()} />
+                <Field label={t('guestPlayer')} value={guest} onChangeText={setGuest} placeholder={t('name')} maxLength={20} />
+                <Button label={t('add')} variant="secondary" onPress={addGuest} disabled={!guest.trim()} />
               </Row>
             </Card>
           ) : null}

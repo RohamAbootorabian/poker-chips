@@ -1,13 +1,14 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { createTable } from '@/engine/engine';
 import { getDeviceId, getName, newTableCode, setName } from '@/lib/identity';
 import { store } from '@/net/store';
 import { Button, Card, Field, Notice, Row, T } from '@/ui/kit';
-import { describeError } from '@/ui/strings';
+import { describeError, t } from '@/ui/i18n';
+import { getLang, setLang } from '@/ui/lang';
 import { colors, parseAmount } from '@/ui/theme';
 
 export default function Home() {
@@ -22,7 +23,7 @@ export default function Home() {
 
   const requireName = () => {
     if (!name.trim()) {
-      setError('اول اسم خودتان را وارد کنید.');
+      setError(t('needName'));
       return false;
     }
     setName(name);
@@ -47,11 +48,11 @@ export default function Home() {
           return;
         }
       }
-      setError('ساخت میز انجام نشد. دوباره تلاش کنید.');
+      setError(t('createFailed'));
     } catch (e) {
       setError(
         (e as { code?: string }).code === 'badAmount'
-          ? 'بلایندها و مبلغ ورود باید عدد مثبت باشند و بلایند کوچک ≤ بلایند بزرگ ≤ مبلغ ورود.'
+          ? t('badSettings')
           : describeError(e),
       );
     } finally {
@@ -63,14 +64,14 @@ export default function Home() {
     if (!requireName()) return;
     const c = code.trim().toUpperCase();
     if (c.length < 4) {
-      setError('کد میز را وارد کنید.');
+      setError(t('needCode'));
       return;
     }
     setBusy(true);
     setError(null);
     try {
       if (await store.fetch(c)) router.push(`/table/${c}`);
-      else setError('میزی با این کد پیدا نشد.');
+      else setError(t('tableNotFound'));
     } catch (e) {
       setError(describeError(e));
     } finally {
@@ -83,46 +84,49 @@ export default function Home() {
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
           <View style={{ gap: 4, marginTop: 12 }}>
-            <T style={styles.title}>چیپ پوکر</T>
-            <T style={{ color: colors.muted }}>با کارت واقعی بازی کنید؛ حساب چیپ‌ها با اپ.</T>
+            <Row style={{ justifyContent: 'space-between' }}>
+              <T style={styles.title}>{t('appTitle')}</T>
+              <Pressable onPress={() => setLang(getLang() === 'fa' ? 'en' : 'fa')} hitSlop={10} style={styles.lang}>
+                <T style={{ fontSize: 14 }}>{t('otherLanguage')}</T>
+              </Pressable>
+            </Row>
+            <T style={{ color: colors.muted }}>{t('appTagline')}</T>
           </View>
 
-          <Field label="اسم شما" value={name} onChangeText={setNameText} placeholder="مثلاً علی" maxLength={20} />
+          <Field label={t('yourName')} value={name} onChangeText={setNameText} placeholder={t('namePlaceholder')} maxLength={20} />
           <Notice text={error} />
 
           <Card>
-            <T style={styles.cardTitle}>ورود به میز</T>
+            <T style={styles.cardTitle}>{t('joinTable')}</T>
             <Field
-              label="کد میز"
+              label={t('tableCode')}
               value={code}
-              onChangeText={(t) => setCode(t.toUpperCase())}
+              onChangeText={(text) => setCode(text.toUpperCase())}
               autoCapitalize="characters"
               autoCorrect={false}
               maxLength={5}
               style={styles.codeInput}
             />
-            <Button label="ورود" onPress={join} disabled={busy} />
+            <Button label={t('join')} onPress={join} disabled={busy} />
           </Card>
 
           <Card>
-            <T style={styles.cardTitle}>ساخت میز جدید</T>
+            <T style={styles.cardTitle}>{t('newTable')}</T>
             <Row>
-              <Field label="بلایند کوچک" value={smallBlind} onChangeText={setSmallBlind} keyboardType="number-pad" />
-              <Field label="بلایند بزرگ" value={bigBlind} onChangeText={setBigBlind} keyboardType="number-pad" />
+              <Field label={t('smallBlind')} value={smallBlind} onChangeText={setSmallBlind} keyboardType="number-pad" />
+              <Field label={t('bigBlind')} value={bigBlind} onChangeText={setBigBlind} keyboardType="number-pad" />
             </Row>
-            <Field label="مبلغ ورود هر نفر" value={buyIn} onChangeText={setBuyIn} keyboardType="number-pad" />
-            <Button label="ساخت میز" variant="secondary" onPress={create} disabled={busy} />
+            <Field label={t('buyInEach')} value={buyIn} onChangeText={setBuyIn} keyboardType="number-pad" />
+            <Button label={t('createTable')} variant="secondary" onPress={create} disabled={busy} />
           </Card>
 
           <Card style={{ opacity: 0.6 }}>
-            <T style={styles.cardTitle}>پوکر آنلاین (به‌زودی)</T>
-            <T style={{ color: colors.muted }}>بازی کامل چندنفره با کارت‌های داخل اپ.</T>
+            <T style={styles.cardTitle}>{t('onlinePoker')}</T>
+            <T style={{ color: colors.muted }}>{t('onlinePokerHint')}</T>
           </Card>
 
           {!store.online ? (
-            <T style={styles.offline}>
-              حالت آزمایشی: سرور تنظیم نشده و میزها فقط روی همین دستگاه ذخیره می‌شوند.
-            </T>
+            <T style={styles.offline}>{t('offlineNotice')}</T>
           ) : null}
         </ScrollView>
       </KeyboardAvoidingView>
@@ -133,6 +137,7 @@ export default function Home() {
 const styles = StyleSheet.create({
   page: { padding: 18, gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center' },
   title: { fontSize: 34, fontWeight: '800', color: colors.gold },
+  lang: { borderWidth: 1, borderColor: colors.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
   cardTitle: { fontSize: 18, fontWeight: '700' },
   codeInput: { textAlign: 'center', letterSpacing: 6, fontSize: 24, fontWeight: '700' },
   offline: { color: colors.muted, fontSize: 13, textAlign: 'center' },

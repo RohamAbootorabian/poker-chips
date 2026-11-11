@@ -4,6 +4,9 @@ Play poker with real cards and let the app keep the chips: stacks, bets, pots,
 side pots, buy-ins and the final settlement. Every player joins the same table
 from their own phone with a room code.
 
+The interface is available in Persian (right-to-left) and English; all text
+lives in `src/ui/i18n.ts`.
+
 Planned second mode: full online poker with cards dealt in the app.
 
 ## Run

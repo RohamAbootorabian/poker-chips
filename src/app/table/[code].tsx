@@ -11,7 +11,8 @@ import { ActionBar } from '@/ui/ActionBar';
 import { Button, Notice, Row, T } from '@/ui/kit';
 import { Ledger } from '@/ui/Ledger';
 import { Showdown } from '@/ui/Showdown';
-import { actionName, describeError, streetName } from '@/ui/strings';
+import { actionName, describeError, streetName, t } from '@/ui/i18n';
+import { endAlign, rowDir } from '@/ui/lang';
 import { colors, fmt, fmtSigned, radius } from '@/ui/theme';
 
 const isGuest = (id: string) => id.startsWith('guest-');
@@ -26,9 +27,17 @@ export default function TableScreen() {
   const [actForOther, setActForOther] = useState(false);
   const joining = useRef(false);
 
+  // One action at a time: a second tap before the first is saved would act on a stale table.
+  const busy = useRef(false);
   const run = (action: Action) => {
+    if (busy.current) return;
+    busy.current = true;
     setError(null);
-    dispatch(action).catch((e) => setError(describeError(e)));
+    dispatch(action)
+      .catch((e) => setError(describeError(e)))
+      .finally(() => {
+        busy.current = false;
+      });
   };
 
   // Take a seat the first time this device opens the table.
@@ -57,9 +66,9 @@ export default function TableScreen() {
         ) : (
           <>
             <T style={{ textAlign: 'center' }}>
-              {status === 'notFound' ? 'میزی با این کد پیدا نشد.' : 'ارتباط با سرور برقرار نشد.'}
+              {status === 'notFound' ? t('tableNotFound') : t('serverError')}
             </T>
-            <Button label="بازگشت" variant="secondary" onPress={() => router.replace('/')} />
+            <Button label={t('back')} variant="secondary" onPress={() => router.replace('/')} />
           </>
         )}
       </SafeAreaView>
@@ -78,13 +87,13 @@ export default function TableScreen() {
       <View style={styles.page}>
         <Row style={{ justifyContent: 'space-between' }}>
           <Pressable onPress={() => router.replace('/')} hitSlop={10}>
-            <T style={styles.link}>خروج</T>
+            <T style={styles.link}>{t('leave')}</T>
           </Pressable>
-          <Pressable onPress={() => Share.share({ message: `کد میز پوکر: ${code}` }).catch(() => {})} hitSlop={10}>
+          <Pressable onPress={() => Share.share({ message: t('shareMessage', { code }) }).catch(() => {})} hitSlop={10}>
             <T style={styles.code}>{code}</T>
           </Pressable>
           <Pressable onPress={() => setLedgerOpen(true)} hitSlop={10}>
-            <T style={styles.link}>دفتر حساب</T>
+            <T style={styles.link}>{t('ledger')}</T>
           </Pressable>
         </Row>
 
@@ -104,14 +113,14 @@ export default function TableScreen() {
           {state.phase === 'betting' && turn ? (
             actingId ? (
               <>
-                {actingId !== me ? <T style={styles.hint}>اقدام به جای {turn.name}</T> : null}
+                {actingId !== me ? <T style={styles.hint}>{t('actingFor', { name: turn.name })}</T> : null}
                 <ActionBar state={state} playerId={actingId} run={run} />
               </>
             ) : (
               <>
-                <T style={styles.hint}>نوبت {turn.name} است…</T>
+                <T style={styles.hint}>{t('turnOf', { name: turn.name })}</T>
                 {isHost ? (
-                  <Button label={`اقدام به جای ${turn.name}`} variant="ghost" onPress={() => setActForOther(true)} />
+                  <Button label={t('actingFor', { name: turn.name })} variant="ghost" onPress={() => setActForOther(true)} />
                 ) : null}
               </>
             )
@@ -121,24 +130,24 @@ export default function TableScreen() {
             isHost ? (
               <Showdown state={state} run={run} />
             ) : (
-              <T style={styles.hint}>کارت‌ها را نشان دهید؛ میزبان برنده را ثبت می‌کند.</T>
+              <T style={styles.hint}>{t('showCards')}</T>
             )
           ) : null}
 
           {betweenHands ? (
             isHost ? (
               <Button
-                label={state.phase === 'lobby' ? 'شروع بازی' : 'دست بعدی'}
+                label={state.phase === 'lobby' ? t('startGame') : t('nextHand')}
                 onPress={() => run({ type: 'startHand' })}
               />
             ) : (
-              <T style={styles.hint}>منتظر میزبان برای شروع دست…</T>
+              <T style={styles.hint}>{t('waitingHost')}</T>
             )
           ) : null}
 
           {isHost && state.undo ? (
             <Pressable onPress={() => run({ type: 'undo' })} hitSlop={8}>
-              <T style={[styles.link, { textAlign: 'center' }]}>برگرداندن آخرین حرکت</T>
+              <T style={[styles.link, { textAlign: 'center' }]}>{t('undo')}</T>
             </Pressable>
           ) : null}
         </View>
@@ -154,10 +163,14 @@ function Center({ state }: { state: TableState }) {
   if (state.phase === 'lobby') {
     return (
       <View style={styles.centerCard}>
-        <T style={styles.caption}>این کد را به دوستانتان بدهید</T>
+        <T style={styles.caption}>{t('shareHint')}</T>
         <T style={styles.bigCode}>{state.code}</T>
         <T style={styles.caption}>
-          بلایندها {fmt(state.settings.smallBlind)} / {fmt(state.settings.bigBlind)} · ورود {fmt(state.settings.buyIn)}
+          {t('lobbyInfo', {
+            sb: fmt(state.settings.smallBlind),
+            bb: fmt(state.settings.bigBlind),
+            buyIn: fmt(state.settings.buyIn),
+          })}
         </T>
       </View>
     );
@@ -166,10 +179,10 @@ function Center({ state }: { state: TableState }) {
     const winners = state.players.filter((p) => p.won > 0);
     return (
       <View style={styles.centerCard}>
-        <T style={styles.caption}>پایان دست {fmt(state.handNumber)}</T>
+        <T style={styles.caption}>{t('handOver', { n: fmt(state.handNumber) })}</T>
         {winners.map((p) => (
           <T key={p.id} style={styles.winner}>
-            {p.name} {fmt(p.won)} برد
+            {t('wins', { name: p.name, amount: fmt(p.won) })}
           </T>
         ))}
       </View>
@@ -179,10 +192,13 @@ function Center({ state }: { state: TableState }) {
   return (
     <View style={styles.centerCard}>
       <T style={styles.caption}>
-        دست {fmt(state.handNumber)} · {state.phase === 'showdown' ? 'نمایش کارت‌ها' : streetName[state.street]}
+        {t('handTitle', {
+          n: fmt(state.handNumber),
+          street: state.phase === 'showdown' ? t('showdown') : streetName(state.street),
+        })}
       </T>
       <T style={styles.pot}>{fmt(pot)}</T>
-      <T style={styles.caption}>پات</T>
+      <T style={styles.caption}>{t('pot')}</T>
     </View>
   );
 }
@@ -193,25 +209,25 @@ function PlayerRow({ p, state, isMe }: { p: Player; state: TableState; isMe: boo
   const out = playing ? !p.inHand || p.folded : p.sittingOut;
   let status: string | null = null;
   let statusColor = colors.muted;
-  if (p.sittingOut) status = 'بیرون';
+  if (p.sittingOut) status = t('sittingOut');
   else if (state.phase === 'handOver' && p.inHand) {
     status = fmtSigned(p.handNet);
     statusColor = p.handNet > 0 ? colors.green : p.handNet < 0 ? colors.red : colors.muted;
   } else if (playing && p.inHand && p.lastAction) {
-    status = actionName[p.lastAction];
+    status = actionName(p.lastAction);
     if (p.lastAction === 'allIn') statusColor = colors.gold;
     if (p.lastAction === 'fold') statusColor = colors.red;
-  } else if (p.stack === 0) status = 'بدون چیپ';
+  } else if (p.stack === 0) status = t('noChips');
 
   return (
-    <View style={[styles.player, isTurn && styles.playerTurn, out && { opacity: 0.45 }]}>
+    <View style={[styles.player, { flexDirection: rowDir() }, isTurn && styles.playerTurn, out && { opacity: 0.45 }]}>
       <View style={[styles.dealer, state.dealerId !== p.id && { opacity: 0 }]}>
         <T style={styles.dealerLabel}>D</T>
       </View>
       <View style={{ flex: 1 }}>
         <T style={styles.name} numberOfLines={1}>
           {p.name}
-          {isMe ? ' (شما)' : ''}
+          {isMe ? t('you') : ''}
         </T>
         {status ? <T style={{ fontSize: 13, color: statusColor }}>{status}</T> : null}
       </View>
@@ -220,7 +236,7 @@ function PlayerRow({ p, state, isMe }: { p: Player; state: TableState; isMe: boo
           <T style={styles.betLabel}>{fmt(p.bet)}</T>
         </View>
       ) : null}
-      <T style={styles.stack}>{fmt(p.stack)}</T>
+      <T style={[styles.stack, { textAlign: endAlign() }]}>{fmt(p.stack)}</T>
     </View>
   );
 }
@@ -245,7 +261,6 @@ const styles = StyleSheet.create({
   pot: { color: colors.gold, fontSize: 48, fontWeight: '800', textAlign: 'center', fontVariant: ['tabular-nums'] },
   winner: { color: colors.green, fontSize: 20, fontWeight: '700', textAlign: 'center' },
   player: {
-    flexDirection: 'row-reverse',
     alignItems: 'center',
     gap: 10,
     minHeight: 58,
@@ -269,7 +284,7 @@ const styles = StyleSheet.create({
   name: { fontSize: 17, fontWeight: '600' },
   bet: { backgroundColor: colors.goldDark, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
   betLabel: { color: colors.gold, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  stack: { fontSize: 18, fontWeight: '700', minWidth: 64, textAlign: 'left', fontVariant: ['tabular-nums'] },
+  stack: { fontSize: 18, fontWeight: '700', minWidth: 64, fontVariant: ['tabular-nums'] },
   bottom: { gap: 10 },
   hint: { color: colors.muted, textAlign: 'center' },
 });

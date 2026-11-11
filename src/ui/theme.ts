@@ -1,3 +1,5 @@
+import { getLang } from './lang';
+
 export const colors = {
   bg: '#0A1F19',
   felt: '#103A2E',
@@ -16,13 +18,12 @@ export const radius = 14;
 
 const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
 
-/** 12500 -> "۱۲٬۵۰۰" */
+/** 12500 -> "۱۲٬۵۰۰" in Persian, "12,500" in English. */
 export function fmt(n: number): string {
   const sign = n < 0 ? '−' : '';
-  const grouped = Math.abs(Math.round(n))
-    .toString()
-    .replace(/\B(?=(\d{3})+(?!\d))/g, '٬');
-  return sign + grouped.replace(/\d/g, (d) => FA_DIGITS[Number(d)]);
+  const digits = Math.abs(Math.round(n)).toString();
+  if (getLang() === 'en') return sign + digits.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  return sign + digits.replace(/\B(?=(\d{3})+(?!\d))/g, '٬').replace(/\d/g, (d) => FA_DIGITS[Number(d)]);
 }
 
 export function fmtSigned(n: number): string {

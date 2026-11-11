@@ -3,7 +3,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Action, TableState } from '@/engine/types';
 
+import { t } from './i18n';
 import { Button, T } from './kit';
+import { rowDir } from './lang';
 import { colors, fmt } from './theme';
 
 /** Host picks who won the next undecided pot (several winners = split). */
@@ -15,14 +17,13 @@ export function Showdown({ state, run }: { state: TableState; run: (a: Action) =
   const ids = picked.pot === potIndex ? picked.ids : [];
   const toggle = (id: string) =>
     setPicked({ pot: potIndex, ids: ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id] });
-  const title = state.pots.length === 1 ? 'پات' : potIndex === 0 ? 'پات اصلی' : `پات کناری ${fmt(potIndex)}`;
+  const title =
+    state.pots.length === 1 ? t('pot') : potIndex === 0 ? t('mainPot') : t('sidePot', { n: fmt(potIndex) });
 
   return (
     <View style={{ gap: 10 }}>
-      <T style={{ textAlign: 'center' }}>
-        برندهٔ {title} ({fmt(pot.amount)}) را انتخاب کنید
-      </T>
-      <View style={styles.chips}>
+      <T style={{ textAlign: 'center' }}>{t('pickWinner', { pot: title, amount: fmt(pot.amount) })}</T>
+      <View style={[styles.chips, { flexDirection: rowDir() }]}>
         {pot.eligible.map((id) => {
           const on = ids.includes(id);
           return (
@@ -35,7 +36,7 @@ export function Showdown({ state, run }: { state: TableState; run: (a: Action) =
         })}
       </View>
       <Button
-        label={ids.length > 1 ? 'تقسیم پات' : 'تأیید برنده'}
+        label={ids.length > 1 ? t('splitPot') : t('confirmWinner')}
         disabled={ids.length === 0}
         onPress={() => run({ type: 'award', potIndex, winnerIds: ids })}
       />
@@ -44,7 +45,7 @@ export function Showdown({ state, run }: { state: TableState; run: (a: Action) =
 }
 
 const styles = StyleSheet.create({
-  chips: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
+  chips: { flexWrap: 'wrap', gap: 8, justifyContent: 'center' },
   chip: {
     minHeight: 44,
     paddingHorizontal: 18,
