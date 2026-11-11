@@ -7,11 +7,13 @@ import { potTotal } from '@/engine/engine';
 import { Action, Player, TableState } from '@/engine/types';
 import { getDeviceId, getName } from '@/lib/identity';
 import { useTable } from '@/net/useTable';
+import { store } from '@/net/store';
 import { ActionBar } from '@/ui/ActionBar';
+import { CardRow } from '@/ui/Cards';
 import { Button, Notice, Row, T } from '@/ui/kit';
 import { Ledger } from '@/ui/Ledger';
 import { Showdown } from '@/ui/Showdown';
-import { actionName, describeError, streetName, t } from '@/ui/i18n';
+import { actionName, describeError, handRankName, streetName, t } from '@/ui/i18n';
 import { endAlign, rowDir } from '@/ui/lang';
 import { colors, fmt, fmtSigned, radius } from '@/ui/theme';
 
@@ -52,6 +54,23 @@ export default function TableScreen() {
     joining.current = true;
     dispatch({ type: 'join', playerId: me, name }).catch((e) => setError(describeError(e)));
   }, [state, seated, code, me, dispatch]);
+
+  // Online tables: fetch this device's own two cards whenever a new hand is dealt.
+  const online = state?.mode === 'online';
+  const handNumber = state?.handNumber ?? 0;
+  const [hole, setHole] = useState<{ handNumber: number; cards: string[] } | null>(null);
+  useEffect(() => {
+    if (!online || !seated || handNumber === 0) return;
+    let cancelled = false;
+    store
+      .holeCards(code, me)
+      .then((h) => !cancelled && setHole(h))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [online, seated, handNumber, code, me]);
+  const myCards = hole && hole.handNumber === handNumber ? hole.cards : [];
 
   const turnId = state?.turnId ?? null;
   useEffect(() => {
@@ -109,6 +128,13 @@ export default function TableScreen() {
 
         <Notice text={error} />
 
+        {online && myCards.length > 0 && state.phase !== 'lobby' ? (
+          <View style={{ gap: 4 }}>
+            <T style={styles.hint}>{t('yourCards')}</T>
+            <CardRow cards={myCards} size="lg" />
+          </View>
+        ) : null}
+
         <View style={styles.bottom}>
           {state.phase === 'betting' && turn ? (
             actingId ? (
@@ -145,7 +171,7 @@ export default function TableScreen() {
             )
           ) : null}
 
-          {isHost && state.undo ? (
+          {isHost && state.undo && !online ? (
             <Pressable onPress={() => run({ type: 'undo' })} hitSlop={8}>
               <T style={[styles.link, { textAlign: 'center' }]}>{t('undo')}</T>
             </Pressable>
@@ -153,7 +179,7 @@ export default function TableScreen() {
         </View>
       </View>
 
-      <Ledger state={state} isHost={isHost} visible={ledgerOpen} onClose={() => setLedgerOpen(false)} run={run} />
+      <Ledger state={state} isHost={isHost} allowGuests={!online} visible={ledgerOpen} onClose={() => setLedgerOpen(false)} run={run} />
     </SafeAreaView>
   );
 }
@@ -175,11 +201,17 @@ function Center({ state }: { state: TableState }) {
       </View>
     );
   }
+  // Online tables show the community cards; empty slots for the ones still to come.
+  const board =
+    state.mode === 'online' ? (
+      <CardRow cards={[0, 1, 2, 3, 4].map((i) => state.board?.[i])} />
+    ) : null;
   if (state.phase === 'handOver') {
     const winners = state.players.filter((p) => p.won > 0);
     return (
       <View style={styles.centerCard}>
         <T style={styles.caption}>{t('handOver', { n: fmt(state.handNumber) })}</T>
+        {board}
         {winners.map((p) => (
           <T key={p.id} style={styles.winner}>
             {t('wins', { name: p.name, amount: fmt(p.won) })}
@@ -197,7 +229,8 @@ function Center({ state }: { state: TableState }) {
           street: state.phase === 'showdown' ? t('showdown') : streetName(state.street),
         })}
       </T>
-      <T style={styles.pot}>{fmt(pot)}</T>
+      {board}
+      <T style={[styles.pot, board ? { fontSize: 34 } : null]}>{fmt(pot)}</T>
       <T style={styles.caption}>{t('pot')}</T>
     </View>
   );
@@ -218,6 +251,9 @@ function PlayerRow({ p, state, isMe }: { p: Player; state: TableState; isMe: boo
     if (p.lastAction === 'allIn') statusColor = colors.gold;
     if (p.lastAction === 'fold') statusColor = colors.red;
   } else if (p.stack === 0) status = t('noChips');
+  const shown = state.phase === 'handOver' ? state.shown?.[p.id] : undefined;
+  const rank = shown ? state.handRanks?.[p.id] : undefined;
+  if (shown && rank !== undefined && status) status = `${handRankName(rank)} · ${status}`;
 
   return (
     <View style={[styles.player, { flexDirection: rowDir() }, isTurn && styles.playerTurn, out && { opacity: 0.45 }]}>
@@ -231,6 +267,7 @@ function PlayerRow({ p, state, isMe }: { p: Player; state: TableState; isMe: boo
         </T>
         {status ? <T style={{ fontSize: 13, color: statusColor }}>{status}</T> : null}
       </View>
+      {shown ? <CardRow cards={shown} size="sm" /> : null}
       {playing && p.bet > 0 ? (
         <View style={styles.bet}>
           <T style={styles.betLabel}>{fmt(p.bet)}</T>

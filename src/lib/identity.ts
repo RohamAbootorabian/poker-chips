@@ -2,6 +2,7 @@ import 'expo-sqlite/localStorage/install';
 
 const ID_KEY = 'pc.deviceId';
 const NAME_KEY = 'pc.name';
+const SECRET_KEY = 'pc.secret';
 
 function randomId(): string {
   let out = '';
@@ -17,6 +18,16 @@ export function getDeviceId(): string {
     localStorage.setItem(ID_KEY, id);
   }
   return id;
+}
+
+/** Never shared with other players; proves to the server that this device owns its seat. */
+export function getSecret(): string {
+  let secret = localStorage.getItem(SECRET_KEY);
+  if (!secret) {
+    secret = randomId() + randomId();
+    localStorage.setItem(SECRET_KEY, secret);
+  }
+  return secret;
 }
 
 export function getName(): string {

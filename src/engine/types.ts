@@ -70,6 +70,16 @@ export interface TableState {
   pots: Pot[];
   /** JSON snapshot of the state before the last game action (single-level undo). */
   undo: string | null;
+
+  // --- online mode only (cards dealt by the server) ---
+  /** 'chips' (default): real cards, the app only tracks chips. 'online': the app deals. */
+  mode?: 'chips' | 'online';
+  /** Community cards revealed so far. */
+  board?: string[];
+  /** Hole cards turned face up at showdown, by player id. */
+  shown?: Record<string, string[]>;
+  /** Hand category (0 high card … 8 straight flush) of each player at showdown. */
+  handRanks?: Record<string, number>;
 }
 
 export type Action =

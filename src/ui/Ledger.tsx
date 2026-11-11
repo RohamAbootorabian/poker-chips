@@ -14,6 +14,8 @@ import { colors, fmt, fmtSigned, parseAmount } from './theme';
 export function Ledger(props: {
   state: TableState;
   isHost: boolean;
+  /** Seats without a phone only make sense when the cards are real. */
+  allowGuests: boolean;
   visible: boolean;
   onClose: () => void;
   run: (a: Action) => void;
@@ -110,11 +112,15 @@ export function Ledger(props: {
                   />
                 </Row>
               ))}
-              <View style={styles.divider} />
-              <Row style={{ alignItems: 'flex-end' }}>
-                <Field label={t('guestPlayer')} value={guest} onChangeText={setGuest} placeholder={t('name')} maxLength={20} />
-                <Button label={t('add')} variant="secondary" onPress={addGuest} disabled={!guest.trim()} />
-              </Row>
+              {props.allowGuests ? (
+                <>
+                  <View style={styles.divider} />
+                  <Row style={{ alignItems: 'flex-end' }}>
+                    <Field label={t('guestPlayer')} value={guest} onChangeText={setGuest} placeholder={t('name')} maxLength={20} />
+                    <Button label={t('add')} variant="secondary" onPress={addGuest} disabled={!guest.trim()} />
+                  </Row>
+                </>
+              ) : null}
             </Card>
           ) : null}
         </ScrollView>

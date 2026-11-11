@@ -4,7 +4,7 @@ import { getLang } from './lang';
 
 const fa = {
   appTitle: 'چیپ پوکر',
-  appTagline: 'با کارت واقعی بازی کنید؛ حساب چیپ‌ها با اپ.',
+  appTagline: 'پوکر با دوستان: با کارت واقعی یا کاملاً داخل اپ.',
   otherLanguage: 'English',
   yourName: 'اسم شما',
   namePlaceholder: 'مثلاً علی',
@@ -21,8 +21,13 @@ const fa = {
   createTable: 'ساخت میز',
   createFailed: 'ساخت میز انجام نشد. دوباره تلاش کنید.',
   badSettings: 'بلایندها و مبلغ ورود باید عدد مثبت باشند و بلایند کوچک ≤ بلایند بزرگ ≤ مبلغ ورود.',
-  onlinePoker: 'پوکر آنلاین (به‌زودی)',
-  onlinePokerHint: 'بازی کامل چندنفره با کارت‌های داخل اپ.',
+  gameMode: 'نوع بازی',
+  modeChips: 'کارت واقعی',
+  modeOnline: 'پوکر آنلاین',
+  modeChipsHint: 'خودتان کارت پخش می‌کنید؛ اپ فقط حساب چیپ‌ها را نگه می‌دارد.',
+  modeOnlineHint: 'اپ کارت پخش می‌کند و برنده را خودش تعیین می‌کند. هر نفر گوشی خودش را لازم دارد.',
+  onlineNeedsServer: 'پوکر آنلاین بدون سرور در دسترس نیست.',
+  yourCards: 'کارت‌های شما',
   offlineNotice: 'حالت آزمایشی: سرور تنظیم نشده و میزها فقط روی همین دستگاه ذخیره می‌شوند.',
 
   leave: 'خروج',
@@ -93,7 +98,7 @@ type Key = keyof typeof fa;
 
 const en: Record<Key, string> = {
   appTitle: 'Poker Chips',
-  appTagline: 'Play with real cards; the app keeps the chips.',
+  appTagline: 'Poker with friends: with real cards, or fully in the app.',
   otherLanguage: 'فارسی',
   yourName: 'Your name',
   namePlaceholder: 'e.g. Alex',
@@ -110,8 +115,13 @@ const en: Record<Key, string> = {
   createTable: 'Create table',
   createFailed: 'Could not create the table. Try again.',
   badSettings: 'Blinds and buy-in must be positive numbers, with small blind ≤ big blind ≤ buy-in.',
-  onlinePoker: 'Online poker (coming soon)',
-  onlinePokerHint: 'Full multiplayer game with cards dealt in the app.',
+  gameMode: 'Game type',
+  modeChips: 'Real cards',
+  modeOnline: 'Online poker',
+  modeChipsHint: 'You deal the cards yourselves; the app only keeps the chips.',
+  modeOnlineHint: 'The app deals the cards and decides the winner. Everyone needs their own phone.',
+  onlineNeedsServer: 'Online poker is not available without a server.',
+  yourCards: 'Your cards',
   offlineNotice: 'Trial mode: no server is set up, so tables are saved on this device only.',
 
   leave: 'Leave',
@@ -224,6 +234,20 @@ const errors: Record<ErrorCode, [string, string]> = {
   nothingToUndo: ['چیزی برای برگرداندن نیست.', 'Nothing to undo.'],
   unknownPlayer: ['بازیکن پیدا نشد.', 'Player not found.'],
 };
+
+const handRanks: [string, string][] = [
+  ['کارت بالا', 'High card'],
+  ['یک جفت', 'Pair'],
+  ['دو جفت', 'Two pair'],
+  ['سه‌تایی', 'Three of a kind'],
+  ['استریت', 'Straight'],
+  ['فلاش', 'Flush'],
+  ['فول هاوس', 'Full house'],
+  ['چهارتایی', 'Four of a kind'],
+  ['استریت فلاش', 'Straight flush'],
+];
+/** Name of a hand category (0 high card … 8 straight flush). */
+export const handRankName = (category: number) => handRanks[category]?.[getLang() === 'en' ? 1 : 0] ?? '';
 
 export function describeError(e: unknown): string {
   const code = (e as { code?: string })?.code;

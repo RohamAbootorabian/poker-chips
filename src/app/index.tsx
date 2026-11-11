@@ -18,6 +18,7 @@ export default function Home() {
   const [smallBlind, setSmallBlind] = useState('5');
   const [bigBlind, setBigBlind] = useState('10');
   const [buyIn, setBuyIn] = useState('1000');
+  const [mode, setMode] = useState<'chips' | 'online'>('chips');
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -42,8 +43,13 @@ export default function Home() {
       };
       // A code collision is unlikely; try a few codes before giving up.
       for (let i = 0; i < 4; i++) {
+        // Validates the settings (throws badAmount) before anything is sent.
         const state = createTable(newTableCode(), getDeviceId(), name.trim(), settings);
-        if (await store.create(state)) {
+        const created =
+          mode === 'online'
+            ? await store.createOnline(state.code, state.hostId, name.trim(), settings)
+            : await store.create(state);
+        if (created) {
           router.push(`/table/${state.code}`);
           return;
         }
@@ -112,17 +118,29 @@ export default function Home() {
 
           <Card>
             <T style={styles.cardTitle}>{t('newTable')}</T>
+            <Row style={{ gap: 8 }}>
+              {(['chips', 'online'] as const).map((m) => (
+                <Pressable
+                  key={m}
+                  disabled={m === 'online' && !store.online}
+                  onPress={() => setMode(m)}
+                  style={[styles.mode, mode === m && styles.modeOn, m === 'online' && !store.online && { opacity: 0.4 }]}
+                >
+                  <T style={[styles.modeLabel, mode === m && { color: colors.ink }]}>
+                    {t(m === 'chips' ? 'modeChips' : 'modeOnline')}
+                  </T>
+                </Pressable>
+              ))}
+            </Row>
+            <T style={{ color: colors.muted, fontSize: 14 }}>
+              {t(mode === 'chips' ? 'modeChipsHint' : 'modeOnlineHint')}
+            </T>
             <Row>
               <Field label={t('smallBlind')} value={smallBlind} onChangeText={setSmallBlind} keyboardType="number-pad" />
               <Field label={t('bigBlind')} value={bigBlind} onChangeText={setBigBlind} keyboardType="number-pad" />
             </Row>
             <Field label={t('buyInEach')} value={buyIn} onChangeText={setBuyIn} keyboardType="number-pad" />
             <Button label={t('createTable')} variant="secondary" onPress={create} disabled={busy} />
-          </Card>
-
-          <Card style={{ opacity: 0.6 }}>
-            <T style={styles.cardTitle}>{t('onlinePoker')}</T>
-            <T style={{ color: colors.muted }}>{t('onlinePokerHint')}</T>
           </Card>
 
           {!store.online ? (
@@ -138,6 +156,18 @@ const styles = StyleSheet.create({
   page: { padding: 18, gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center' },
   title: { fontSize: 34, fontWeight: '800', color: colors.gold },
   lang: { borderWidth: 1, borderColor: colors.line, borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
+  mode: {
+    flex: 1,
+    minHeight: 44,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: colors.line,
+    backgroundColor: colors.card,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modeOn: { backgroundColor: colors.gold, borderColor: colors.gold },
+  modeLabel: { fontSize: 15, fontWeight: '700', textAlign: 'center' },
   cardTitle: { fontSize: 18, fontWeight: '700' },
   codeInput: { textAlign: 'center', letterSpacing: 6, fontSize: 24, fontWeight: '700' },
   offline: { color: colors.muted, fontSize: 13, textAlign: 'center' },

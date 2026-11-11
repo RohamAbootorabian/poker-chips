@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { reduce } from '@/engine/engine';
 import { Action, TableState } from '@/engine/types';
 
 import { Snapshot, store } from './store';
@@ -8,9 +7,9 @@ import { Snapshot, store } from './store';
 export type LoadStatus = 'loading' | 'ready' | 'notFound' | 'error';
 
 /**
- * Live view of one table plus a `dispatch` that applies an action through the
- * engine and writes the result. Throws GameError for illegal actions and a
- * plain Error for network problems.
+ * Live view of one table plus a `dispatch` that applies an action and saves
+ * it. Rejects with GameError for illegal actions and a plain Error for
+ * network problems.
  */
 export function useTable(code: string, meId: string) {
   const [snap, setSnap] = useState<Snapshot | null>(null);
@@ -47,19 +46,9 @@ export function useTable(code: string, meId: string) {
 
   const dispatch = useCallback(
     async (action: Action): Promise<TableState> => {
-      for (let attempt = 0; attempt < 5; attempt++) {
-        const cur = ref.current ?? (await store.fetch(code));
-        if (!cur) throw new Error('notFound');
-        const next = reduce(cur.state, action, meId);
-        if (await store.update(code, cur.version, next)) {
-          accept({ state: next, version: cur.version + 1 });
-          return next;
-        }
-        // Someone else wrote first: reload and re-validate against the new state.
-        const fresh = await store.fetch(code);
-        if (fresh) accept(fresh);
-      }
-      throw new Error('conflict');
+      const snap = await store.act(code, action, meId);
+      accept(snap);
+      return snap.state;
     },
     [code, meId, accept],
   );
