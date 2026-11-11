@@ -20,9 +20,11 @@ one device only (the host can seat "players without a phone" and act for them).
 
 ## Connect devices (Supabase)
 
-1. Create a Supabase project and run `supabase/schema.sql` in its SQL editor.
-2. Copy `.env.example` to `.env` and fill in the project URL and publishable key.
-3. Restart `npx expo start --clear`.
+Tables are shared through a Supabase project. The schema lives in
+`supabase/migrations/`; apply it with `npx supabase db push --remote`.
+
+Put the project URL and publishable key in `.env` (see `.env.example`), then
+restart with `npx expo start --clear`. `.env` is not committed.
 
 ## Layout
 
