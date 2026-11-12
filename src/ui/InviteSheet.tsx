@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Modal, Pressable, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { tableUrl } from '@/lib/links';
+import { inviteText, tableUrl } from '@/lib/links';
 
 import { t } from './i18n';
 import { Button, D, Row, T } from './kit';
@@ -11,18 +11,21 @@ import { QrCode } from './QrCode';
 import { colors, radius } from './theme';
 
 /** Everything needed to bring someone to this table: QR code, link, copy and share. */
-export function InviteSheet({ code, visible, onClose }: { code: string; visible: boolean; onClose: () => void }) {
+export function InviteSheet(props: { code: string; hostName: string; visible: boolean; onClose: () => void }) {
+  const { code, visible, onClose } = props;
   const url = tableUrl(code);
+  const message = inviteText(code, props.hostName);
   const [copied, setCopied] = useState(false);
 
   const copy = () => {
     // Called straight from the tap: Safari only allows clipboard writes inside the user gesture.
-    Clipboard.setStringAsync(url)
+    Clipboard.setStringAsync(message)
       .then((ok) => setCopied(ok))
       .catch(() => setCopied(false));
   };
   const share = () => {
-    Share.share({ message: t('inviteMessage', { url }), url }).catch(() => {});
+    // The link is already inside the message; passing `url` too would send it twice on iOS.
+    Share.share({ message }).catch(() => {});
   };
 
   return (

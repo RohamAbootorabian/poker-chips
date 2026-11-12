@@ -10,3 +10,8 @@ export function tableUrl(code: string): string {
 }
 
 export { parseTableCode } from './tableCode';
+
+/** The text sent with an invite. Always English, whatever the app language, so every friend can read it. */
+export function inviteText(code: string, hostName: string): string {
+  return `You're invited to table ${code} by ${hostName.trim() || 'a friend'}\n${tableUrl(code)}`;
+}

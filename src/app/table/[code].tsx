@@ -172,7 +172,10 @@ export default function TableScreen() {
         </View>
       </View>
 
-      <InviteSheet code={code} visible={inviteOpen} onClose={() => setInviteOpen(false)} />
+      <InviteSheet
+        code={code}
+        hostName={state.players.find((p) => p.id === state.hostId)?.name ?? ''}
+        visible={inviteOpen} onClose={() => setInviteOpen(false)} />
       <Ledger state={state} isHost={isHost} allowGuests={!online} visible={ledgerOpen} onClose={() => setLedgerOpen(false)} run={run} />
     </SafeAreaView>
   );
