@@ -26,6 +26,8 @@ The app runs on iOS, Android and the web from one codebase, in Persian
 
 > Play-money only. The app tracks chips between friends; it never moves real money.
 
+Built with AI-assisted development (Claude Code); product design, decisions and testing by me.
+
 ## Features
 
 - Texas Hold'em betting rules: blinds, minimum raises, all-ins, side pots,
