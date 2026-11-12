@@ -50,11 +50,9 @@ const styles = StyleSheet.create({
     minHeight: 44,
     paddingHorizontal: 18,
     borderRadius: 22,
-    borderWidth: 1,
-    borderColor: colors.line,
     backgroundColor: colors.card,
     justifyContent: 'center',
   },
-  chipOn: { backgroundColor: colors.gold, borderColor: colors.gold },
+  chipOn: { backgroundColor: colors.gold },
   chipLabel: { fontSize: 16, fontWeight: '700', textAlign: 'center' },
 });

@@ -17,7 +17,8 @@ export function useTable(code: string, meId: string) {
   const ref = useRef<Snapshot | null>(null);
 
   const accept = useCallback((next: Snapshot) => {
-    if (ref.current && next.version <= ref.current.version) return;
+    const cur = ref.current;
+    if (cur && cur.state.code === next.state.code && next.version <= cur.version) return;
     ref.current = next;
     setSnap(next);
   }, []);
@@ -28,21 +29,23 @@ export function useTable(code: string, meId: string) {
       if (next) {
         accept(next);
         setStatus('ready');
-      } else if (!ref.current) {
+      } else if (ref.current?.state.code !== code) {
         setStatus('notFound');
       }
     } catch {
-      if (!ref.current) setStatus('error');
+      if (ref.current?.state.code !== code) setStatus('error');
     }
   }, [code, accept]);
 
   useEffect(() => {
-    ref.current = null;
-    setSnap(null);
-    setStatus('loading');
+    // Initial load. `refresh` only sets state after its network request resolves.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void refresh();
     return store.subscribe(code, () => void refresh());
   }, [code, refresh]);
+
+  // A snapshot of another table (the code in the URL changed) is not this table's state.
+  const current = snap?.state.code === code ? snap.state : null;
 
   const dispatch = useCallback(
     async (action: Action): Promise<TableState> => {
@@ -53,5 +56,5 @@ export function useTable(code: string, meId: string) {
     [code, meId, accept],
   );
 
-  return { state: snap?.state ?? null, status, dispatch, refresh };
+  return { state: current, status: current ? 'ready' : status === 'ready' ? 'loading' : status, dispatch, refresh };
 }

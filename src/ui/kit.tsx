@@ -12,12 +12,23 @@ import {
 } from 'react-native';
 
 import { isRTL, rowDir, startAlign } from './lang';
-import { colors, radius } from './theme';
+import { colors, fonts, radius } from './theme';
 
-/** Text in the app's default colour, aligned for the current language. */
+/**
+ * Body text in the app's default colour, aligned for the current language.
+ * Custom fonts have one file per weight, so `fontWeight` is turned into the matching family.
+ */
 export function T({ style, ...rest }: TextProps) {
+  const flat = StyleSheet.flatten(style) ?? {};
+  const weight = Number(flat.fontWeight ?? 400);
+  const fontFamily = flat.fontFamily ?? (weight >= 700 ? fonts.bold : weight >= 600 ? fonts.medium : fonts.body);
   const dir = { writingDirection: isRTL() ? 'rtl' : 'ltr', textAlign: startAlign() } as const;
-  return <Text {...rest} style={[styles.text, dir, style]} />;
+  return <Text {...rest} style={[styles.text, dir, flat, { fontFamily, fontWeight: 'normal' }]} />;
+}
+
+/** Display text: titles and big numbers. */
+export function D({ style, ...rest }: TextProps) {
+  return <T {...rest} style={[{ fontFamily: fonts.display }, style]} />;
 }
 
 type Variant = 'primary' | 'secondary' | 'danger' | 'ghost';
@@ -44,10 +55,8 @@ export function Button(props: {
         props.style,
       ]}
     >
-      <Text style={[styles.buttonLabel, v === 'primary' && { color: colors.ink }]}>{props.label}</Text>
-      {props.sub ? (
-        <Text style={[styles.buttonSub, v === 'primary' && { color: colors.ink }]}>{props.sub}</Text>
-      ) : null}
+      <T style={[styles.buttonLabel, v === 'primary' && { color: colors.ink }]}>{props.label}</T>
+      {props.sub ? <T style={[styles.buttonSub, v === 'primary' && { color: colors.ink }]}>{props.sub}</T> : null}
     </Pressable>
   );
 }
@@ -94,40 +103,33 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  buttonLabel: { color: colors.text, fontSize: 17, fontWeight: '700' },
-  buttonSub: { color: colors.text, fontSize: 13, opacity: 0.85, marginTop: 2 },
+  buttonLabel: { color: colors.text, fontSize: 17, fontWeight: '700', textAlign: 'center' },
+  buttonSub: { color: colors.text, fontSize: 13, opacity: 0.85, textAlign: 'center' },
   fieldLabel: { color: colors.muted, fontSize: 13 },
   input: {
     minHeight: 50,
     borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.line,
     backgroundColor: colors.felt,
     color: colors.text,
+    fontFamily: fonts.medium,
     fontSize: 18,
     paddingHorizontal: 14,
   },
-  card: {
-    backgroundColor: colors.felt,
-    borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.line,
-    padding: 14,
-    gap: 10,
-  },
+  // A section of a page: grouped by space and a hairline, not boxed.
+  card: { borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 16, gap: 12 },
   row: { alignItems: 'center', gap: 10 },
   notice: {
     borderRadius: radius,
     borderWidth: 1,
     borderColor: colors.red,
-    backgroundColor: '#3A1716',
+    backgroundColor: '#3A1A2A',
     padding: 10,
   },
 });
 
 const buttonStyles = StyleSheet.create({
   primary: { backgroundColor: colors.gold },
-  secondary: { backgroundColor: colors.card, borderWidth: 1, borderColor: colors.line },
-  danger: { backgroundColor: '#5A2220', borderWidth: 1, borderColor: colors.red },
+  secondary: { backgroundColor: colors.card },
+  danger: { backgroundColor: colors.crimson },
   ghost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.line },
 });

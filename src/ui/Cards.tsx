@@ -16,7 +16,7 @@ export function PlayingCard({ card, size = 'md' }: { card?: string | null; size?
   if (card === undefined) return <View style={[styles.slot, box]} />;
   if (card === null) return <View style={[styles.back, box]} />;
   const suit = card[1] as keyof typeof SUIT;
-  const color = suit === 'h' || suit === 'd' ? '#C62828' : '#16181D';
+  const color = suit === 'h' || suit === 'd' ? '#B3202E' : '#161B2E';
   const rank = card[0] === 'T' ? '10' : card[0];
   return (
     <View style={[styles.face, box]} accessibilityLabel={`${rank}${SUIT[suit]}`}>
@@ -39,7 +39,8 @@ export function CardRow(props: { cards: (string | null | undefined)[]; size?: ke
 
 const styles = StyleSheet.create({
   row: { flexDirection: 'row', gap: 6, justifyContent: 'center' },
-  face: { backgroundColor: '#FAF7EF', alignItems: 'center', justifyContent: 'center' },
-  back: { backgroundColor: '#7A2230', borderWidth: 2, borderColor: '#FAF7EF' },
-  slot: { borderWidth: 1, borderColor: colors.line, borderStyle: 'dashed' },
+  face: { backgroundColor: colors.ivory, alignItems: 'center', justifyContent: 'center' },
+  back: { backgroundColor: colors.bg, borderWidth: 2, borderColor: colors.gold },
+  // An empty place on the felt where a community card will land.
+  slot: { backgroundColor: colors.crimsonDeep },
 });

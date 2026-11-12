@@ -1,32 +1,33 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, Share, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { potTotal } from '@/engine/engine';
-import { Action, Player, TableState } from '@/engine/types';
+import { Action, TableState } from '@/engine/types';
 import { getDeviceId, getName } from '@/lib/identity';
 import { useTable } from '@/net/useTable';
 import { store } from '@/net/store';
 import { ActionBar } from '@/ui/ActionBar';
 import { CardRow } from '@/ui/Cards';
-import { Button, Notice, Row, T } from '@/ui/kit';
+import { Button, D, Notice, Row, T } from '@/ui/kit';
 import { Ledger } from '@/ui/Ledger';
 import { Showdown } from '@/ui/Showdown';
-import { actionName, describeError, handRankName, streetName, t } from '@/ui/i18n';
-import { endAlign, rowDir } from '@/ui/lang';
-import { colors, fmt, fmtSigned, radius } from '@/ui/theme';
+import { TableView } from '@/ui/TableView';
+import { describeError, streetName, t } from '@/ui/i18n';
+import { colors, fmt } from '@/ui/theme';
 
 const isGuest = (id: string) => id.startsWith('guest-');
 
 export default function TableScreen() {
   const params = useLocalSearchParams<{ code: string }>();
   const code = (params.code ?? '').toUpperCase();
-  const me = useMemo(getDeviceId, []);
+  const me = useMemo(() => getDeviceId(), []);
   const { state, status, dispatch } = useTable(code, me);
   const [error, setError] = useState<string | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
-  const [actForOther, setActForOther] = useState(false);
+  // The host's "act for this player" choice only lasts for that one turn.
+  const [actForTurn, setActForTurn] = useState<string | null>(null);
   const joining = useRef(false);
 
   // One action at a time: a second tap before the first is saved would act on a stale table.
@@ -72,10 +73,7 @@ export default function TableScreen() {
   }, [online, seated, handNumber, code, me]);
   const myCards = hole && hole.handNumber === handNumber ? hole.cards : [];
 
-  const turnId = state?.turnId ?? null;
-  useEffect(() => {
-    setActForOther(false);
-  }, [turnId]);
+  const actForOther = actForTurn !== null && actForTurn === `${handNumber}|${state?.street}|${state?.turnId}`;
 
   if (!state) {
     return (
@@ -109,33 +107,22 @@ export default function TableScreen() {
             <T style={styles.link}>{t('leave')}</T>
           </Pressable>
           <Pressable onPress={() => Share.share({ message: t('shareMessage', { code }) }).catch(() => {})} hitSlop={10}>
-            <T style={styles.code}>{code}</T>
+            <D style={styles.code}>{code}</D>
           </Pressable>
           <Pressable onPress={() => setLedgerOpen(true)} hitSlop={10}>
             <T style={styles.link}>{t('ledger')}</T>
           </Pressable>
         </Row>
 
-        <Center state={state} />
-
-        <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 8 }}>
-          {state.players
-            .filter((p) => !p.left)
-            .map((p) => (
-              <PlayerRow key={p.id} p={p} state={state} isMe={p.id === me} />
-            ))}
-        </ScrollView>
+        <TableView state={state} me={me}>
+          <Center state={state} />
+        </TableView>
 
         <Notice text={error} />
 
-        {online && myCards.length > 0 && state.phase !== 'lobby' ? (
-          <View style={{ gap: 4 }}>
-            <T style={styles.hint}>{t('yourCards')}</T>
-            <CardRow cards={myCards} size="lg" />
-          </View>
-        ) : null}
-
         <View style={styles.bottom}>
+          {online && myCards.length > 0 && state.phase !== 'lobby' ? <CardRow cards={myCards} size="lg" /> : null}
+
           {state.phase === 'betting' && turn ? (
             actingId ? (
               <>
@@ -146,7 +133,7 @@ export default function TableScreen() {
               <>
                 <T style={styles.hint}>{t('turnOf', { name: turn.name })}</T>
                 {isHost ? (
-                  <Button label={t('actingFor', { name: turn.name })} variant="ghost" onPress={() => setActForOther(true)} />
+                  <Button label={t('actingFor', { name: turn.name })} variant="ghost" onPress={() => setActForTurn(`${handNumber}|${state.street}|${state.turnId}`)} />
                 ) : null}
               </>
             )
@@ -184,13 +171,13 @@ export default function TableScreen() {
   );
 }
 
-/** The middle of the table: pot and what is going on. */
+/** What lies in the middle of the felt: the room code, or the board and the pot. */
 function Center({ state }: { state: TableState }) {
   if (state.phase === 'lobby') {
     return (
-      <View style={styles.centerCard}>
+      <>
         <T style={styles.caption}>{t('shareHint')}</T>
-        <T style={styles.bigCode}>{state.code}</T>
+        <D style={styles.bigCode}>{state.code}</D>
         <T style={styles.caption}>
           {t('lobbyInfo', {
             sb: fmt(state.settings.smallBlind),
@@ -198,31 +185,29 @@ function Center({ state }: { state: TableState }) {
             buyIn: fmt(state.settings.buyIn),
           })}
         </T>
-      </View>
+      </>
     );
   }
-  // Online tables show the community cards; empty slots for the ones still to come.
+  // Online tables show the community cards; empty places for the ones still to come.
   const board =
-    state.mode === 'online' ? (
-      <CardRow cards={[0, 1, 2, 3, 4].map((i) => state.board?.[i])} />
-    ) : null;
+    state.mode === 'online' ? <CardRow cards={[0, 1, 2, 3, 4].map((i) => state.board?.[i])} size="sm" /> : null;
   if (state.phase === 'handOver') {
     const winners = state.players.filter((p) => p.won > 0);
     return (
-      <View style={styles.centerCard}>
+      <>
         <T style={styles.caption}>{t('handOver', { n: fmt(state.handNumber) })}</T>
         {board}
         {winners.map((p) => (
-          <T key={p.id} style={styles.winner}>
+          <D key={p.id} style={styles.winner}>
             {t('wins', { name: p.name, amount: fmt(p.won) })}
-          </T>
+          </D>
         ))}
-      </View>
+      </>
     );
   }
   const pot = state.phase === 'showdown' ? state.pots.reduce((sum, p) => sum + p.amount, 0) : potTotal(state);
   return (
-    <View style={styles.centerCard}>
+    <>
       <T style={styles.caption}>
         {t('handTitle', {
           n: fmt(state.handNumber),
@@ -230,98 +215,21 @@ function Center({ state }: { state: TableState }) {
         })}
       </T>
       {board}
-      <T style={[styles.pot, board ? { fontSize: 34 } : null]}>{fmt(pot)}</T>
-      <T style={styles.caption}>{t('pot')}</T>
-    </View>
-  );
-}
-
-function PlayerRow({ p, state, isMe }: { p: Player; state: TableState; isMe: boolean }) {
-  const playing = state.phase === 'betting' || state.phase === 'showdown';
-  const isTurn = state.turnId === p.id;
-  const out = playing ? !p.inHand || p.folded : p.sittingOut;
-  let status: string | null = null;
-  let statusColor = colors.muted;
-  if (p.sittingOut) status = t('sittingOut');
-  else if (state.phase === 'handOver' && p.inHand) {
-    status = fmtSigned(p.handNet);
-    statusColor = p.handNet > 0 ? colors.green : p.handNet < 0 ? colors.red : colors.muted;
-  } else if (playing && p.inHand && p.lastAction) {
-    status = actionName(p.lastAction);
-    if (p.lastAction === 'allIn') statusColor = colors.gold;
-    if (p.lastAction === 'fold') statusColor = colors.red;
-  } else if (p.stack === 0) status = t('noChips');
-  const shown = state.phase === 'handOver' ? state.shown?.[p.id] : undefined;
-  const rank = shown ? state.handRanks?.[p.id] : undefined;
-  if (shown && rank !== undefined && status) status = `${handRankName(rank)} · ${status}`;
-
-  return (
-    <View style={[styles.player, { flexDirection: rowDir() }, isTurn && styles.playerTurn, out && { opacity: 0.45 }]}>
-      <View style={[styles.dealer, state.dealerId !== p.id && { opacity: 0 }]}>
-        <T style={styles.dealerLabel}>D</T>
-      </View>
-      <View style={{ flex: 1 }}>
-        <T style={styles.name} numberOfLines={1}>
-          {p.name}
-          {isMe ? t('you') : ''}
-        </T>
-        {status ? <T style={{ fontSize: 13, color: statusColor }}>{status}</T> : null}
-      </View>
-      {shown ? <CardRow cards={shown} size="sm" /> : null}
-      {playing && p.bet > 0 ? (
-        <View style={styles.bet}>
-          <T style={styles.betLabel}>{fmt(p.bet)}</T>
-        </View>
-      ) : null}
-      <T style={[styles.stack, { textAlign: endAlign() }]}>{fmt(p.stack)}</T>
-    </View>
+      <D style={styles.pot}>{fmt(pot)}</D>
+    </>
   );
 }
 
 const styles = StyleSheet.create({
-  page: { flex: 1, padding: 16, gap: 12, maxWidth: 520, width: '100%', alignSelf: 'center' },
+  page: { flex: 1, padding: 16, gap: 10, maxWidth: 520, width: '100%', alignSelf: 'center' },
   center: { flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   link: { color: colors.muted, fontSize: 15 },
-  code: { color: colors.gold, fontSize: 18, fontWeight: '800', letterSpacing: 3 },
-  centerCard: {
-    backgroundColor: colors.felt,
-    borderRadius: 28,
-    borderWidth: 1,
-    borderColor: colors.line,
-    paddingVertical: 18,
-    paddingHorizontal: 16,
-    alignItems: 'center',
-    gap: 4,
-  },
-  caption: { color: colors.muted, fontSize: 14, textAlign: 'center' },
-  bigCode: { color: colors.gold, fontSize: 44, fontWeight: '800', letterSpacing: 8, textAlign: 'center' },
-  pot: { color: colors.gold, fontSize: 48, fontWeight: '800', textAlign: 'center', fontVariant: ['tabular-nums'] },
-  winner: { color: colors.green, fontSize: 20, fontWeight: '700', textAlign: 'center' },
-  player: {
-    alignItems: 'center',
-    gap: 10,
-    minHeight: 58,
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.line,
-    backgroundColor: colors.felt,
-  },
-  playerTurn: { borderColor: colors.gold, backgroundColor: colors.card },
-  dealer: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: colors.text,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  dealerLabel: { color: colors.ink, fontSize: 13, fontWeight: '800', textAlign: 'center' },
-  name: { fontSize: 17, fontWeight: '600' },
-  bet: { backgroundColor: colors.goldDark, borderRadius: 10, paddingHorizontal: 10, paddingVertical: 4 },
-  betLabel: { color: colors.gold, fontSize: 15, fontWeight: '700', fontVariant: ['tabular-nums'] },
-  stack: { fontSize: 18, fontWeight: '700', minWidth: 64, fontVariant: ['tabular-nums'] },
+  code: { color: colors.gold, fontSize: 22, lineHeight: 30, letterSpacing: 3 },
+  // On the crimson felt, captions are ivory rather than the navy-tinted grey.
+  caption: { color: colors.ivory, opacity: 0.8, fontSize: 13, textAlign: 'center' },
+  bigCode: { color: colors.ivory, fontSize: 46, lineHeight: 60, letterSpacing: 6, textAlign: 'center' },
+  pot: { color: colors.gold, fontSize: 44, lineHeight: 56, textAlign: 'center' },
+  winner: { color: colors.ivory, fontSize: 22, lineHeight: 32, textAlign: 'center' },
   bottom: { gap: 10 },
   hint: { color: colors.muted, textAlign: 'center' },
 });

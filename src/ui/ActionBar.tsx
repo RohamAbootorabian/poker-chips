@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Pressable, StyleSheet, TextInput, View } from 'react-native';
 
 import { legalActions, potTotal } from '@/engine/engine';
@@ -6,19 +6,18 @@ import { Action, TableState } from '@/engine/types';
 
 import { t } from './i18n';
 import { Button, Row, T } from './kit';
-import { colors, fmt, parseAmount, radius } from './theme';
+import { colors, fmt, fonts, parseAmount, radius } from './theme';
 
 /** Fold / check-call / raise controls for the player whose turn it is. */
 export function ActionBar(props: { state: TableState; playerId: string; run: (a: Action) => void }) {
   const { state, playerId, run } = props;
   const legal = legalActions(state, playerId);
-  const [raising, setRaising] = useState(false);
+  // The raise panel belongs to one decision: it closes by itself when the turn or the bet to match changes.
+  const decision = `${state.handNumber}|${state.street}|${state.turnId}|${state.currentBet}`;
+  const [raisingFor, setRaisingFor] = useState<string | null>(null);
+  const raising = raisingFor === decision;
+  const setRaising = (on: boolean) => setRaisingFor(on ? decision : null);
   const [to, setTo] = useState(0);
-
-  // Close the raise panel whenever the turn or the bet to match changes.
-  useEffect(() => {
-    setRaising(false);
-  }, [state.turnId, state.currentBet, state.street, state.handNumber]);
 
   if (!legal) return null;
   const { minRaiseTo, maxRaiseTo } = legal;
@@ -82,7 +81,7 @@ export function ActionBar(props: { state: TableState; playerId: string; run: (a:
   }
 
   return (
-    <Row>
+    <Row style={{ alignItems: 'stretch' }}>
       {legal.canRaise ? (
         <Button label={state.currentBet === 0 ? t('bet') : t('raise')} onPress={openRaise} style={{ flex: 1 }} />
       ) : null}
@@ -116,12 +115,10 @@ const styles = StyleSheet.create({
     minWidth: 0,
     minHeight: 52,
     borderRadius: radius,
-    borderWidth: 1,
-    borderColor: colors.gold,
     backgroundColor: colors.felt,
     color: colors.gold,
-    fontSize: 26,
-    fontWeight: '800',
+    fontFamily: fonts.display,
+    fontSize: 28,
     textAlign: 'center',
   },
   stepper: {
@@ -129,8 +126,6 @@ const styles = StyleSheet.create({
     height: 52,
     borderRadius: radius,
     backgroundColor: colors.card,
-    borderWidth: 1,
-    borderColor: colors.line,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -138,8 +133,8 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 40,
     borderRadius: 10,
-    borderWidth: 1,
-    borderColor: colors.line,
+    borderWidth: 1.5,
+    borderColor: colors.card,
     backgroundColor: colors.card,
     alignItems: 'center',
     justifyContent: 'center',

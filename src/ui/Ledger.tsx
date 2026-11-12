@@ -6,7 +6,7 @@ import { settle } from '@/engine/engine';
 import { Action, TableState } from '@/engine/types';
 
 import { t } from './i18n';
-import { Button, Card, Field, Row, T } from './kit';
+import { Button, Card, D, Field, Row, T } from './kit';
 import { isRTL } from './lang';
 import { colors, fmt, fmtSigned, parseAmount } from './theme';
 
@@ -40,7 +40,7 @@ export function Ledger(props: {
       <SafeAreaView style={{ flex: 1, backgroundColor: colors.bg }}>
         <ScrollView contentContainerStyle={styles.page} keyboardShouldPersistTaps="handled">
           <Row style={{ justifyContent: 'space-between' }}>
-            <T style={styles.title}>{t('ledger')}</T>
+            <D style={styles.title}>{t('ledger')}</D>
             <Button label={t('close')} variant="ghost" onPress={props.onClose} style={{ minHeight: 40 }} />
           </Row>
 
@@ -70,7 +70,7 @@ export function Ledger(props: {
           </Card>
 
           <Card>
-            <T style={styles.section}>{t('settlement')}</T>
+            <D style={styles.section}>{t('settlement')}</D>
             {midHand ? <T style={styles.muted}>{t('midHand')}</T> : null}
             {!midHand && transfers.length === 0 ? <T style={styles.muted}>{t('allSquare')}</T> : null}
             {!midHand &&
@@ -84,7 +84,7 @@ export function Ledger(props: {
 
           {isHost ? (
             <Card>
-              <T style={styles.section}>{t('hostTools')}</T>
+              <D style={styles.section}>{t('hostTools')}</D>
               <Field
                 label={t('rebuyAmount')}
                 value={amount}
@@ -131,8 +131,8 @@ export function Ledger(props: {
 
 const styles = StyleSheet.create({
   page: { padding: 18, gap: 16, maxWidth: 520, width: '100%', alignSelf: 'center' },
-  title: { fontSize: 24, fontWeight: '800' },
-  section: { fontSize: 17, fontWeight: '700' },
+  title: { fontSize: 30, lineHeight: 42 },
+  section: { fontSize: 22, lineHeight: 32 },
   head: { flex: 1, color: colors.muted, fontSize: 13, textAlign: 'center' },
   cell: { flex: 1, textAlign: 'center', fontVariant: ['tabular-nums'] },
   muted: { color: colors.muted, fontSize: 14 },

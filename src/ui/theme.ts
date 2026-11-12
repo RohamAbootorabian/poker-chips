@@ -1,20 +1,37 @@
 import { getLang } from './lang';
 
+/**
+ * A Persian card room: navy walls, a crimson (lakki) felt, ivory cards,
+ * brass for chips and numbers, turquoise for "it's your turn" and winnings.
+ */
 export const colors = {
-  bg: '#0A1F19',
-  felt: '#103A2E',
-  card: '#15463A',
-  line: '#22594A',
-  text: '#F3EFE4',
-  muted: '#9DB8AD',
-  gold: '#E8BC4E',
-  goldDark: '#3A2F0F',
-  red: '#E0655F',
-  green: '#5FD08A',
-  ink: '#0A1F19',
+  bg: '#0F1830',
+  felt: '#18233F', // quiet surfaces: fields, panels
+  card: '#223056', // raised surfaces: secondary buttons
+  line: '#2E3D66',
+  text: '#F4ECDB',
+  muted: '#9AA6C4',
+  gold: '#D6A84A',
+  goldDark: '#3B2F12',
+  red: '#FF8A80',
+  green: '#3FCDBB',
+  turq: '#3FCDBB',
+  ink: '#0F1830',
+  crimson: '#8E1F2F',
+  crimsonDeep: '#6C1523',
+  rail: '#2B1A14',
+  ivory: '#F6F0E2',
 };
 
 export const radius = 14;
+
+/** Lalezar for titles and numbers, Vazirmatn for everything else. Both cover Persian and Latin. */
+export const fonts = {
+  display: 'Lalezar_400Regular',
+  body: 'Vazirmatn_400Regular',
+  medium: 'Vazirmatn_600SemiBold',
+  bold: 'Vazirmatn_700Bold',
+};
 
 const FA_DIGITS = '۰۱۲۳۴۵۶۷۸۹';
 
