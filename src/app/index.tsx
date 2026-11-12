@@ -106,6 +106,7 @@ export default function Home() {
 
             <Card>
               <D style={styles.section}>{t('joinTable')}</D>
+              <Button label={t('scanQr')} variant="secondary" onPress={() => router.push('/scan')} />
               <Row style={{ alignItems: 'flex-end' }}>
                 <Field
                   label={t('tableCode')}

@@ -27,7 +27,15 @@
       "expo-status-bar",
       "expo-sqlite",
       "expo-font",
-      "expo-splash-screen"
+      "expo-splash-screen",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow $(PRODUCT_NAME) to use the camera to scan table QR codes.",
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ]
     ],
     "scheme": "pokerchips",
     "experiments": {

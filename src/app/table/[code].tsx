@@ -1,6 +1,6 @@
 import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Share, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { potTotal } from '@/engine/engine';
@@ -11,6 +11,7 @@ import { store } from '@/net/store';
 import { ActionBar } from '@/ui/ActionBar';
 import { CardRow } from '@/ui/Cards';
 import { Button, D, Notice, Row, T } from '@/ui/kit';
+import { InviteSheet } from '@/ui/InviteSheet';
 import { Ledger } from '@/ui/Ledger';
 import { Showdown } from '@/ui/Showdown';
 import { TableView } from '@/ui/TableView';
@@ -26,6 +27,7 @@ export default function TableScreen() {
   const { state, status, dispatch } = useTable(code, me);
   const [error, setError] = useState<string | null>(null);
   const [ledgerOpen, setLedgerOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
   // The host's "act for this player" choice only lasts for that one turn.
   const [actForTurn, setActForTurn] = useState<string | null>(null);
   const joining = useRef(false);
@@ -106,7 +108,7 @@ export default function TableScreen() {
           <Pressable onPress={() => router.replace('/')} hitSlop={10}>
             <T style={styles.link}>{t('leave')}</T>
           </Pressable>
-          <Pressable onPress={() => Share.share({ message: t('shareMessage', { code }) }).catch(() => {})} hitSlop={10}>
+          <Pressable onPress={() => setInviteOpen(true)} hitSlop={10} accessibilityLabel={t('inviteFriends')}>
             <D style={styles.code}>{code}</D>
           </Pressable>
           <Pressable onPress={() => setLedgerOpen(true)} hitSlop={10}>
@@ -147,6 +149,10 @@ export default function TableScreen() {
             )
           ) : null}
 
+          {state.phase === 'lobby' ? (
+            <Button label={t('inviteFriends')} variant="secondary" onPress={() => setInviteOpen(true)} />
+          ) : null}
+
           {betweenHands ? (
             isHost ? (
               <Button
@@ -166,6 +172,7 @@ export default function TableScreen() {
         </View>
       </View>
 
+      <InviteSheet code={code} visible={inviteOpen} onClose={() => setInviteOpen(false)} />
       <Ledger state={state} isHost={isHost} allowGuests={!online} visible={ledgerOpen} onClose={() => setLedgerOpen(false)} run={run} />
     </SafeAreaView>
   );
