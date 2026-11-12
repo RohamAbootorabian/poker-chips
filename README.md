@@ -7,10 +7,10 @@ chips, or of the whole game.
 **Live demo:** https://poker-chips.expo.app (works in any phone or desktop browser, no install needed)
 
 <p>
-  <img src="docs/screenshots/home.png" width="200" alt="Home screen" />
-  <img src="docs/screenshots/table.png" width="200" alt="A six-player table during betting" />
-  <img src="docs/screenshots/online-showdown.png" width="200" alt="Online showdown with cards revealed" />
-  <img src="docs/screenshots/invite.png" width="200" alt="Invite sheet with QR code and link" />
+  <img src="docs/screenshots/home-en.png" width="200" alt="Home screen" />
+  <img src="docs/screenshots/table-en.png" width="200" alt="A six-player table during betting" />
+  <img src="docs/screenshots/online-showdown-en.png" width="200" alt="Online showdown with cards revealed" />
+  <img src="docs/screenshots/invite-en.png" width="200" alt="Invite sheet with QR code and link" />
 </p>
 
 There are two kinds of table:
