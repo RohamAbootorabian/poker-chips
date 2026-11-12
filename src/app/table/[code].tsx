@@ -9,7 +9,8 @@ import { getDeviceId, getName } from '@/lib/identity';
 import { useTable } from '@/net/useTable';
 import { store } from '@/net/store';
 import { ActionBar } from '@/ui/ActionBar';
-import { CardRow } from '@/ui/Cards';
+import { CardRow, HandCards } from '@/ui/Cards';
+import { ChipPile } from '@/ui/Chips';
 import { Button, D, Notice, Row, T } from '@/ui/kit';
 import { InviteSheet } from '@/ui/InviteSheet';
 import { Ledger } from '@/ui/Ledger';
@@ -123,7 +124,7 @@ export default function TableScreen() {
         <Notice text={error} />
 
         <View style={styles.bottom}>
-          {online && myCards.length > 0 && state.phase !== 'lobby' ? <CardRow cards={myCards} size="lg" /> : null}
+          {online && myCards.length > 0 && state.phase !== 'lobby' ? <HandCards cards={myCards} /> : null}
 
           {state.phase === 'betting' && turn ? (
             actingId ? (
@@ -200,7 +201,7 @@ function Center({ state }: { state: TableState }) {
   }
   // Online tables show the community cards; empty places for the ones still to come.
   const board =
-    state.mode === 'online' ? <CardRow cards={[0, 1, 2, 3, 4].map((i) => state.board?.[i])} size="sm" /> : null;
+    state.mode === 'online' ? <CardRow cards={[0, 1, 2, 3, 4].map((i) => state.board?.[i])} size="md" /> : null;
   if (state.phase === 'handOver') {
     const winners = state.players.filter((p) => p.won > 0);
     return (
@@ -225,6 +226,7 @@ function Center({ state }: { state: TableState }) {
         })}
       </T>
       {board}
+      {pot > 0 ? <ChipPile amount={pot} size={26} /> : null}
       <D style={styles.pot}>{fmt(pot)}</D>
     </>
   );
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
   // On the crimson felt, captions are ivory rather than the navy-tinted grey.
   caption: { color: colors.ivory, opacity: 0.8, fontSize: 13, textAlign: 'center' },
   bigCode: { color: colors.ivory, fontSize: 46, lineHeight: 60, letterSpacing: 6, textAlign: 'center' },
-  pot: { color: colors.gold, fontSize: 44, lineHeight: 56, textAlign: 'center' },
+  pot: { color: colors.gold, fontSize: 30, lineHeight: 40, textAlign: 'center' },
   winner: { color: colors.ivory, fontSize: 22, lineHeight: 32, textAlign: 'center' },
   bottom: { gap: 10 },
   hint: { color: colors.muted, textAlign: 'center' },
