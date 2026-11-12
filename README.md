@@ -18,6 +18,7 @@ npm install
 npx expo start        # then press i / a / w, or scan the QR code with Expo Go
 npm test              # game-engine tests
 npm run typecheck
+npm run lint
 ```
 
 Without a server configured the app runs in a local trial mode: tables live on
@@ -35,6 +36,19 @@ Tables are shared through a Supabase project.
 
 Put the project URL and publishable key in `.env` (see `.env.example`), then
 restart with `npx expo start --clear`. `.env` is not committed.
+
+## Website
+
+The web build is hosted on EAS Hosting at https://poker-chips.expo.app and can
+be added to a phone's home screen (`public/manifest.json`). It talks to the
+same Supabase project as the native app, so a table can mix phones on the app
+and phones or computers on the site.
+
+```bash
+npm run deploy:web    # export the web build and publish it as production
+```
+
+`EXPO_PUBLIC_*` values are baked in at export time from `.env`.
 
 ## Layout
 
